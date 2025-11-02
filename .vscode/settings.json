@@ -2,7 +2,7 @@
   "solidity.compileUsingRemoteVersion": "latest",
   "solidity.remappings": [
     "@openzeppelin/=./lib/openzeppelin-contracts/",
-    "forge-std/=lib/forge-std/src/",
+    "forge-std/=dependencies/forge-std-1.11.0/src/",
     "@tokenized-strategy/=./lib/tokenized-strategy/src/",
     "@periphery/=./lib/tokenized-strategy-periphery/src/"
   ]

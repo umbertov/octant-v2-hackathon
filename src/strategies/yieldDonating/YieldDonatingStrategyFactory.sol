@@ -31,21 +31,23 @@ contract YieldDonatingStrategyFactory {
 
     /**
      * @notice Deploy a new YieldDonating Strategy.
-     * @param _compounderVault The yield source (e.g., AAVE pool, Compound, Yearn vault)
+     * @param _lendingPool The AAVE Pool address
+     * @param _aToken The AToken corresponding to pool address
      * @param _asset The underlying asset for the strategy to use.
      * @param _name The name for the strategy.
      * @return The address of the new strategy.
      */
-    function newStrategy(
-        address _compounderVault,
-        address _asset,
-        string calldata _name
-    ) external virtual returns (address) {
+    function newStrategy(address _lendingPool, address _aToken, address _asset, string calldata _name)
+        external
+        virtual
+        returns (address)
+    {
         // Deploy new YieldDonating strategy
         IStrategyInterface _newStrategy = IStrategyInterface(
             address(
                 new YieldDonatingStrategy(
-                    _compounderVault,
+                    _lendingPool,
+                    _aToken,
                     _asset,
                     _name,
                     management,
