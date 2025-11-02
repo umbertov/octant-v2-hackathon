@@ -2,11 +2,17 @@
 pragma solidity ^0.8.25;
 
 import {BaseStrategy} from "@octant-core/core/BaseStrategy.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// todo implement IYieldSource interface
-interface IYieldSource {}
+interface IPool {
+    function supply(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external;
+    function withdraw(address asset, uint256 amount, address to) external returns (uint256);
+}
+
+interface IAToken is IERC20 {
+    function UNDERLYING_ASSET_ADDRESS() external view returns (address);
+}
 
 /**
  * @title YieldDonating Strategy Template
@@ -23,7 +29,8 @@ contract YieldDonatingStrategy is BaseStrategy {
     using SafeERC20 for ERC20;
 
     /// @notice Address of the yield source (e.g., Aave pool, Compound, Yearn vault)
-    IYieldSource public immutable yieldSource;
+    IPool public immutable lendingPool;
+    IAToken public immutable aToken;
 
     /**
      * @param _asset Address of the underlying asset
@@ -36,7 +43,8 @@ contract YieldDonatingStrategy is BaseStrategy {
      * @param _tokenizedStrategyAddress Address of TokenizedStrategy implementation
      */
     constructor(
-        address _yieldSource,
+        address _lendingPool,
+        address _aToken,
         address _asset,
         string memory _name,
         address _management,
@@ -57,10 +65,12 @@ contract YieldDonatingStrategy is BaseStrategy {
             _tokenizedStrategyAddress
         )
     {
-        yieldSource = IYieldSource(_yieldSource);
+        require(IAToken(_aToken).UNDERLYING_ASSET_ADDRESS() == _asset, "Asset mismatch with aToken");
+        lendingPool = IPool(_lendingPool);
+        aToken = IAToken(_aToken);
 
         // max allow Yield source to withdraw assets
-        ERC20(_asset).forceApprove(_yieldSource, type(uint256).max);
+        ERC20(_asset).forceApprove(_lendingPool, type(uint256).max);
 
         // TokenizedStrategy initialization will be handled separately
         // This is just a template - the actual initialization depends on
@@ -85,9 +95,10 @@ contract YieldDonatingStrategy is BaseStrategy {
     function _deployFunds(uint256 _amount) internal override {
         // TODO: implement your logic to deploy funds into yield source
         // Example for AAVE:
-        // yieldSource.supply(address(asset), _amount, address(this), 0);
+        // lendingPool.supply(address(asset), _amount, address(this), 0);
         // Example for ERC4626 vault:
         // IERC4626(compounderVault).deposit(_amount, address(this));
+        IPool(lendingPool).supply(address(asset), _amount, address(this), 0);
     }
 
     /**
@@ -114,10 +125,11 @@ contract YieldDonatingStrategy is BaseStrategy {
     function _freeFunds(uint256 _amount) internal override {
         // TODO: implement your logic to free funds from yield source
         // Example for AAVE:
-        // yieldSource.withdraw(address(asset), _amount, address(this));
+        // lendingPool.withdraw(address(asset), _amount, address(this));
         // Example for ERC4626 vault:
         // uint256 shares = IERC4626(compounderVault).convertToShares(_amount);
         // IERC4626(compounderVault).redeem(shares, address(this), address(this));
+        IPool(lendingPool).withdraw(address(asset), _amount, address(this));
     }
 
     /**
@@ -147,6 +159,11 @@ contract YieldDonatingStrategy is BaseStrategy {
         // 1. Amount of assets claimable from the yield source
         // 2. Amount of assets idle in the strategy
         // 3. Return the total (assets claimable + assets idle)
+        // Get the total assets under management (idle + supplied to AAVE)
+        uint256 idleAssets = IERC20(asset).balanceOf(address(this));
+        uint256 aTokenAssets = IAToken(aToken).balanceOf(address(this));
+        _totalAssets = idleAssets + aTokenAssets;
+        return _totalAssets;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -158,8 +175,18 @@ contract YieldDonatingStrategy is BaseStrategy {
      * @dev Can be overridden to implement withdrawal limits.
      * @return . The available amount that can be withdrawn.
      */
-    function availableWithdrawLimit(address /*_owner*/) public view virtual override returns (uint256) {
-        return type(uint256).max;
+    function availableWithdrawLimit(
+        address /*_owner*/
+    )
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        uint256 idleBalance = IERC20(asset).balanceOf(address(this));
+        uint256 aTokenBalance = IAToken(aToken).balanceOf(address(this));
+        return idleBalance + aTokenBalance;
     }
 
     /**
@@ -168,8 +195,16 @@ contract YieldDonatingStrategy is BaseStrategy {
      * @param . The address that will deposit.
      * @return . The available amount that can be deposited.
      */
-    function availableDepositLimit(address /*_owner*/) public view virtual override returns (uint256) {
-        return type(uint256).max;
+    function availableDepositLimit(
+        address /*_owner*/
+    )
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
+        return IERC20(address(asset)).balanceOf(address(this));
     }
 
     /**
@@ -226,5 +261,7 @@ contract YieldDonatingStrategy is BaseStrategy {
      *
      * @param _amount The amount of asset to attempt to free.
      */
-    function _emergencyWithdraw(uint256 _amount) internal virtual override {}
+    function _emergencyWithdraw(uint256 _amount) internal virtual override {
+        _freeFunds(_amount);
+    }
 }
