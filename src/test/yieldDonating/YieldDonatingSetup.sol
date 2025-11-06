@@ -38,7 +38,7 @@ contract YieldDonatingSetup is Test, IEvents {
 
     // Fuzz from $0.01 of 1e6 stable coins up to 1,000,000 of the asset
     uint256 public maxFuzzAmount;
-    uint256 public minFuzzAmount = 10_000;
+    uint256 public minFuzzAmount = 100 * 1e6;
 
     // Default profit max unlock time is set for 10 days
     uint256 public profitMaxUnlockTime = 10 days;

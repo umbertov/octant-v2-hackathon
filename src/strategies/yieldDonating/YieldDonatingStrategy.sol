@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.25;
 
+import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {BaseStrategy} from "@octant-core/core/BaseStrategy.sol";
 import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IERC6426} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
@@ -19,6 +20,8 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
  */
 contract YieldDonatingStrategy is BaseStrategy {
     using SafeERC20 for ERC20;
+
+    uint256 public minIdleToTend = 100 * 1e6; // Example: 100 USDC (set to your asset's decimals)
 
     /// @notice Address of the yield source (e.g., any ERC-4626 compliant vault)
     IERC4626 public immutable vault;
@@ -67,57 +70,76 @@ contract YieldDonatingStrategy is BaseStrategy {
         // TokenizedStrategy initialization will be handled separately
     }
 
-    /*//////////////////////////////////////////////////////////////
-              NEEDED TO BE OVERRIDDEN BY STRATEGIST
-    //////////////////////////////////////////////////////////////*/
+    // (In _harvestAndReport)
+    function _harvestAndReport() internal view override returns (uint256 _totalAssets) {
+        uint256 idleAssets = IERC20(asset).balanceOf(address(this));
+        uint256 sharesHeld = vault.balanceOf(address(this));
+        uint256 vaultAssets = vault.convertToAssets(sharesHeld);
 
-    /**
-     * @dev Deploys '_amount' of 'asset' into the ERC-4626 vault.
-     */
+        _totalAssets = idleAssets + vaultAssets;
+
+        return _totalAssets;
+    }
+
     function _deployFunds(uint256 _amount) internal override {
-        // Use standard ERC-4626 deposit
-        vault.deposit(_amount, address(this));
+        // Do nothing to prevent MEV.
+        // Funds will be deployed by _tend or _harvestAndReport.
+    }
+
+    function _tend(uint256 _totalIdle) internal virtual override {
+        require(_totalIdle >= minIdleToTend);
+        vault.deposit(_totalIdle, address(this));
+        // if (_totalIdle >= minIdleToTend) {
+        // vault.deposit(_totalIdle, address(this));
+        // }
+    }
+
+    function _tendTrigger() internal view virtual override returns (bool) {
+        uint256 idleAssets = IERC20(asset).balanceOf(address(this));
+        return idleAssets >= minIdleToTend;
+    }
+
+    function setMinIdleToTend(uint256 _newMin) external onlyManagement {
+        minIdleToTend = _newMin;
     }
 
     /**
      * @dev Frees '_amount' of 'asset' from the ERC-4626 vault.
+     * @dev This is now defensive, withdrawing only up to the vault's
+     * actual balance to prevent "withdraw more than max" errors.
      */
     function _freeFunds(uint256 _amount) internal override {
-        // Use standard ERC-4626 withdraw
-        // We are the owner of the shares and the receiver of the assets
-        vault.withdraw(_amount, address(this), address(this));
+        // 1. Get the strategy's total share balance in the vault
+        uint256 sharesHeld = vault.balanceOf(address(this));
+        if (sharesHeld == 0) {
+            return; // Nothing to withdraw
+        }
+
+        // find the actual asset value of those shares
+        uint256 assetsInVault = vault.convertToAssets(sharesHeld);
+
+        // determine the amount to withdraw:
+        // it's the SMALLER of the amount requested OR what we actually have.
+        uint256 amountToWithdraw = Math.min(_amount, assetsInVault);
+
+        // 4. (Even safer) Also respect the vault's maxWithdraw limit.
+        //    This handles cases where the vault is illiquid.
+        uint256 maxVaultWithdraw = vault.maxWithdraw(address(this));
+        amountToWithdraw = Math.min(amountToWithdraw, maxVaultWithdraw);
+
+        if (amountToWithdraw > 0) {
+            // Use standard ERC-4626 withdraw
+            // We are the owner of the shares and the receiver of the assets
+            vault.withdraw(amountToWithdraw, address(this), address(this));
+        }
     }
 
     /**
-     * @dev Internal function to harvest, redeploy idle funds, and report
-     * total assets.
+     * @dev Frees funds during an emergency shutdown.
      */
-    function _harvestAndReport() internal override returns (uint256 _totalAssets) {
-        // This logic faithfully translates the original Aave-based implementation.
-        // It reports the total assets *before* the new supply is factored in,
-        // which is a common and correct pattern for profit calculation.
-
-        // 1. Calculate idle assets (assets held by this strategy contract)
-        uint256 idleAssets = IERC20(asset).balanceOf(address(this));
-
-        // 2. Calculate assets deposited in the vault
-        //    a. Get the number of shares this strategy holds
-        uint256 sharesHeld = vault.balanceOf(address(this));
-        //    b. Convert those shares to their underlying asset value
-        uint256 vaultAssets = vault.convertToAssets(sharesHeld);
-
-        // 3. If there are idle assets, deploy (compound) them
-        if (idleAssets > 0) {
-            vault.deposit(idleAssets, address(this));
-        }
-
-        // 4. Report total assets *before* the new deposit.
-        //    The BaseStrategy will use this to calculate profit.
-        //    (e.g., 100 idle + 1000 in vault = 1100 total.
-        //    The 100 idle is compounded for the *next* period).
-        _totalAssets = idleAssets + vaultAssets;
-
-        return _totalAssets;
+    function _emergencyWithdraw(uint256 _amount) internal virtual override {
+        // This now safely handles _amount = type(uint256).max
+        _freeFunds(_amount);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -142,26 +164,5 @@ contract YieldDonatingStrategy is BaseStrategy {
      */
     function availableDepositLimit(address) public view virtual override returns (uint256) {
         return type(uint256).max;
-    }
-
-    // /**
-    //  * @dev Optional function for strategist to override...
-    //  */
-    // function _tend(uint256 _totalIdle) internal virtual override {}
-
-    // /**
-    //  * @dev Optional trigger to override if tend() will be used...
-    //  */
-    // function _tendTrigger() internal view virtual override returns (bool) {
-    //     return false;
-    // }
-
-    /**
-     * @dev Frees funds during an emergency shutdown.
-     */
-    function _emergencyWithdraw(uint256 _amount) internal virtual override {
-        // This function correctly calls _freeFunds, which we've already
-        // updated to use vault.withdraw(). No change needed here.
-        _freeFunds(_amount);
     }
 }

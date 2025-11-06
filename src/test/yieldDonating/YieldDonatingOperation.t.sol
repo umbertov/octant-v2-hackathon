@@ -68,34 +68,34 @@ contract YieldDonatingOperationTest is Setup {
     function test_tendTrigger(uint256 _amount) public {
         vm.assume(_amount > minFuzzAmount && _amount < maxFuzzAmount);
 
-        (bool trigger, ) = strategy.tendTrigger();
-        assertTrue(!trigger);
+        (bool trigger,) = strategy.tendTrigger();
+        assertTrue(!trigger, "1");
 
         // Deposit into strategy
         mintAndDepositIntoStrategy(strategy, user, _amount);
 
-        (trigger, ) = strategy.tendTrigger();
-        assertTrue(!trigger);
+        (trigger,) = strategy.tendTrigger();
+        assertTrue(!trigger, "2");
 
         // Skip some time
         skip(30 days);
 
-        (trigger, ) = strategy.tendTrigger();
-        assertTrue(!trigger);
+        (trigger,) = strategy.tendTrigger();
+        assertTrue(!trigger, "3");
 
         vm.prank(keeper);
         strategy.report();
 
-        (trigger, ) = strategy.tendTrigger();
-        assertTrue(!trigger);
+        (trigger,) = strategy.tendTrigger();
+        assertTrue(!trigger, "4");
 
-        (trigger, ) = strategy.tendTrigger();
-        assertTrue(!trigger);
+        (trigger,) = strategy.tendTrigger();
+        assertTrue(!trigger, "5");
 
         vm.prank(user);
         strategy.redeem(_amount, user, user);
 
-        (trigger, ) = strategy.tendTrigger();
-        assertTrue(!trigger);
+        (trigger,) = strategy.tendTrigger();
+        assertTrue(!trigger, "6");
     }
 }
