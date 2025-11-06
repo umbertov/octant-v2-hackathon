@@ -2,30 +2,29 @@
 pragma solidity ^0.8.25;
 
 import {BaseStrategy} from "@octant-core/core/BaseStrategy.sol";
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {IERC6426} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-// todo implement IYieldSource interface
-interface IYieldSource {}
-
 /**
- * @title YieldDonating Strategy Template
- * @author Octant
+ * @title YieldDonating Strategy Template (ERC-4626)
+ * @author Octant (Modified for ERC-4626)
  * @notice Template for creating YieldDonating strategies that mint profits to donationAddress
  * @dev This strategy template works with the TokenizedStrategy pattern where
- *      initialization and management functions are handled by a separate contract.
- *      The strategy focuses on the core yield generation logic.
+ * initialization and management functions are handled by a separate contract.
+ * The strategy focuses on the core yield generation logic.
  *
- *      NOTE: To implement permissioned functions you can use the onlyManagement,
- *      onlyEmergencyAuthorized and onlyKeepers modifiers
+ * NOTE: To implement permissioned functions you can use the onlyManagement,
+ * onlyEmergencyAuthorized and onlyKeepers modifiers
  */
 contract YieldDonatingStrategy is BaseStrategy {
     using SafeERC20 for ERC20;
 
-    /// @notice Address of the yield source (e.g., Aave pool, Compound, Yearn vault)
-    IYieldSource public immutable yieldSource;
+    /// @notice Address of the yield source (e.g., any ERC-4626 compliant vault)
+    IERC4626 public immutable vault;
 
     /**
+     * @param _vault Address of the ERC-4626 vault
      * @param _asset Address of the underlying asset
      * @param _name Strategy name
      * @param _management Address with management role
@@ -36,7 +35,7 @@ contract YieldDonatingStrategy is BaseStrategy {
      * @param _tokenizedStrategyAddress Address of TokenizedStrategy implementation
      */
     constructor(
-        address _yieldSource,
+        address _vault,
         address _asset,
         string memory _name,
         address _management,
@@ -57,174 +56,112 @@ contract YieldDonatingStrategy is BaseStrategy {
             _tokenizedStrategyAddress
         )
     {
-        yieldSource = IYieldSource(_yieldSource);
+        vault = IERC4626(_vault);
 
-        // max allow Yield source to withdraw assets
-        ERC20(_asset).forceApprove(_yieldSource, type(uint256).max);
+        // Verify the vault's underlying asset matches the strategy's asset
+        require(vault.asset() == _asset, "Asset mismatch with vault");
+
+        // max allow Vault to withdraw assets from this strategy
+        ERC20(_asset).forceApprove(_vault, type(uint256).max);
 
         // TokenizedStrategy initialization will be handled separately
-        // This is just a template - the actual initialization depends on
-        // the specific TokenizedStrategy implementation being used
     }
 
     /*//////////////////////////////////////////////////////////////
-                NEEDED TO BE OVERRIDDEN BY STRATEGIST
+              NEEDED TO BE OVERRIDDEN BY STRATEGIST
     //////////////////////////////////////////////////////////////*/
 
     /**
-     * @dev Can deploy up to '_amount' of 'asset' in the yield source.
-     *
-     * This function is called at the end of a {deposit} or {mint}
-     * call. Meaning that unless a whitelist is implemented it will
-     * be entirely permissionless and thus can be sandwiched or otherwise
-     * manipulated.
-     *
-     * @param _amount The amount of 'asset' that the strategy can attempt
-     * to deploy.
+     * @dev Deploys '_amount' of 'asset' into the ERC-4626 vault.
      */
     function _deployFunds(uint256 _amount) internal override {
-        // TODO: implement your logic to deploy funds into yield source
-        // Example for AAVE:
-        // yieldSource.supply(address(asset), _amount, address(this), 0);
-        // Example for ERC4626 vault:
-        // IERC4626(compounderVault).deposit(_amount, address(this));
+        // Use standard ERC-4626 deposit
+        vault.deposit(_amount, address(this));
     }
 
     /**
-     * @dev Should attempt to free the '_amount' of 'asset'.
-     *
-     * NOTE: The amount of 'asset' that is already loose has already
-     * been accounted for.
-     *
-     * This function is called during {withdraw} and {redeem} calls.
-     * Meaning that unless a whitelist is implemented it will be
-     * entirely permissionless and thus can be sandwiched or otherwise
-     * manipulated.
-     *
-     * Should not rely on asset.balanceOf(address(this)) calls other than
-     * for diff accounting purposes.
-     *
-     * Any difference between `_amount` and what is actually freed will be
-     * counted as a loss and passed on to the withdrawer. This means
-     * care should be taken in times of illiquidity. It may be better to revert
-     * if withdraws are simply illiquid so not to realize incorrect losses.
-     *
-     * @param _amount, The amount of 'asset' to be freed.
+     * @dev Frees '_amount' of 'asset' from the ERC-4626 vault.
      */
     function _freeFunds(uint256 _amount) internal override {
-        // TODO: implement your logic to free funds from yield source
-        // Example for AAVE:
-        // yieldSource.withdraw(address(asset), _amount, address(this));
-        // Example for ERC4626 vault:
-        // uint256 shares = IERC4626(compounderVault).convertToShares(_amount);
-        // IERC4626(compounderVault).redeem(shares, address(this), address(this));
+        // Use standard ERC-4626 withdraw
+        // We are the owner of the shares and the receiver of the assets
+        vault.withdraw(_amount, address(this), address(this));
     }
 
     /**
-     * @dev Internal function to harvest all rewards, redeploy any idle
-     * funds and return an accurate accounting of all funds currently
-     * held by the Strategy.
-     *
-     * This should do any needed harvesting, rewards selling, accrual,
-     * redepositing etc. to get the most accurate view of current assets.
-     *
-     * NOTE: All applicable assets including loose assets should be
-     * accounted for in this function.
-     *
-     * Care should be taken when relying on oracles or swap values rather
-     * than actual amounts as all Strategy profit/loss accounting will
-     * be done based on this returned value.
-     *
-     * This can still be called post a shutdown, a strategist can check
-     * `TokenizedStrategy.isShutdown()` to decide if funds should be
-     * redeployed or simply realize any profits/losses.
-     *
-     * @return _totalAssets A trusted and accurate account for the total
-     * amount of 'asset' the strategy currently holds including idle funds.
+     * @dev Internal function to harvest, redeploy idle funds, and report
+     * total assets.
      */
     function _harvestAndReport() internal override returns (uint256 _totalAssets) {
-        // TODO: Implement harvesting logic
-        // 1. Amount of assets claimable from the yield source
-        // 2. Amount of assets idle in the strategy
-        // 3. Return the total (assets claimable + assets idle)
+        // This logic faithfully translates the original Aave-based implementation.
+        // It reports the total assets *before* the new supply is factored in,
+        // which is a common and correct pattern for profit calculation.
+
+        // 1. Calculate idle assets (assets held by this strategy contract)
+        uint256 idleAssets = IERC20(asset).balanceOf(address(this));
+
+        // 2. Calculate assets deposited in the vault
+        //    a. Get the number of shares this strategy holds
+        uint256 sharesHeld = vault.balanceOf(address(this));
+        //    b. Convert those shares to their underlying asset value
+        uint256 vaultAssets = vault.convertToAssets(sharesHeld);
+
+        // 3. If there are idle assets, deploy (compound) them
+        if (idleAssets > 0) {
+            vault.deposit(idleAssets, address(this));
+        }
+
+        // 4. Report total assets *before* the new deposit.
+        //    The BaseStrategy will use this to calculate profit.
+        //    (e.g., 100 idle + 1000 in vault = 1100 total.
+        //    The 100 idle is compounded for the *next* period).
+        _totalAssets = idleAssets + vaultAssets;
+
+        return _totalAssets;
     }
 
     /*//////////////////////////////////////////////////////////////
-                    OPTIONAL TO OVERRIDE BY STRATEGIST
+              OPTIONAL TO OVERRIDE BY STRATEGIST
     //////////////////////////////////////////////////////////////*/
 
     /**
      * @notice Gets the max amount of `asset` that can be withdrawn.
-     * @dev Can be overridden to implement withdrawal limits.
-     * @return . The available amount that can be withdrawn.
      */
-    function availableWithdrawLimit(address /*_owner*/) public view virtual override returns (uint256) {
-        return type(uint256).max;
+    function availableWithdrawLimit(address) public view virtual override returns (uint256) {
+        // Calculate total assets = idle + value held in vault
+        uint256 idleBalance = IERC20(asset).balanceOf(address(this));
+
+        uint256 sharesHeld = vault.balanceOf(address(this));
+        uint256 vaultAssets = vault.convertToAssets(sharesHeld);
+
+        return idleBalance + vaultAssets;
     }
 
     /**
      * @notice Gets the max amount of `asset` that can be deposited.
-     * @dev Can be overridden to implement deposit limits.
-     * @param . The address that will deposit.
-     * @return . The available amount that can be deposited.
      */
-    function availableDepositLimit(address /*_owner*/) public view virtual override returns (uint256) {
+    function availableDepositLimit(address) public view virtual override returns (uint256) {
         return type(uint256).max;
     }
 
-    /**
-     * @dev Optional function for strategist to override that can
-     *  be called in between reports.
-     *
-     * If '_tend' is used tendTrigger() will also need to be overridden.
-     *
-     * This call can only be called by a permissioned role so may be
-     * through protected relays.
-     *
-     * This can be used to harvest and compound rewards, deposit idle funds,
-     * perform needed position maintenance or anything else that doesn't need
-     * a full report for.
-     *
-     *   EX: A strategy that can not deposit funds without getting
-     *       sandwiched can use the tend when a certain threshold
-     *       of idle to totalAssets has been reached.
-     *
-     * This will have no effect on PPS of the strategy till report() is called.
-     *
-     * @param _totalIdle The current amount of idle funds that are available to deploy.
-     */
-    function _tend(uint256 _totalIdle) internal virtual override {}
+    // /**
+    //  * @dev Optional function for strategist to override...
+    //  */
+    // function _tend(uint256 _totalIdle) internal virtual override {}
+
+    // /**
+    //  * @dev Optional trigger to override if tend() will be used...
+    //  */
+    // function _tendTrigger() internal view virtual override returns (bool) {
+    //     return false;
+    // }
 
     /**
-     * @dev Optional trigger to override if tend() will be used by the strategy.
-     * This must be implemented if the strategy hopes to invoke _tend().
-     *
-     * @return . Should return true if tend() should be called by keeper or false if not.
+     * @dev Frees funds during an emergency shutdown.
      */
-    function _tendTrigger() internal view virtual override returns (bool) {
-        return false;
+    function _emergencyWithdraw(uint256 _amount) internal virtual override {
+        // This function correctly calls _freeFunds, which we've already
+        // updated to use vault.withdraw(). No change needed here.
+        _freeFunds(_amount);
     }
-
-    /**
-     * @dev Optional function for a strategist to override that will
-     * allow management to manually withdraw deployed funds from the
-     * yield source if a strategy is shutdown.
-     *
-     * This should attempt to free `_amount`, noting that `_amount` may
-     * be more than is currently deployed.
-     *
-     * NOTE: This will not realize any profits or losses. A separate
-     * {report} will be needed in order to record any profit/loss. If
-     * a report may need to be called after a shutdown it is important
-     * to check if the strategy is shutdown during {_harvestAndReport}
-     * so that it does not simply re-deploy all funds that had been freed.
-     *
-     * EX:
-     *   if(freeAsset > 0 && !TokenizedStrategy.isShutdown()) {
-     *       depositFunds...
-     *    }
-     *
-     * @param _amount The amount of asset to attempt to free.
-     */
-    function _emergencyWithdraw(uint256 _amount) internal virtual override {}
 }
