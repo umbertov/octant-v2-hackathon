@@ -13,11 +13,6 @@ contract YieldDonatingStrategy is BaseStrategy {
     /// @notice Address of the Spark ERC-4626 vault (e.g., spUSDC)
     IERC4626 public immutable vault;
 
-    /// @notice Minimum amount of idle assets to trigger a _tend call.
-    /// @dev Set to a reasonable value to avoid wasting gas on tiny deposits.
-    /// Example: 100 * 1e6 for 100 USDC.
-    uint256 public minIdleToTend;
-
     /**
      * @param _vault Address of the Spark ERC-4626 vault (e.g., spUSDC)
      * @param _asset Address of the underlying asset (e.g., USDC)
@@ -56,10 +51,6 @@ contract YieldDonatingStrategy is BaseStrategy {
         // Verify the vault's underlying asset matches the strategy's asset
         require(vault.asset() == _asset, "Asset mismatch with vault");
 
-        // Set a default tend threshold (e.g., 100 units of the asset)
-        // Assumes 1e6 decimals for USDC, adjust as needed for other assets
-        minIdleToTend = 100 * (10**ERC20(_asset).decimals());
-
         // max allow Vault to withdraw assets
         ERC20(_asset).forceApprove(_vault, type(uint256).max);
     }
@@ -68,13 +59,8 @@ contract YieldDonatingStrategy is BaseStrategy {
                 NEEDED TO BE OVERRIDDEN BY STRATEGIST
     //////////////////////////////////////////////////////////////*/
 
-    /**
-     * @dev Do NOT deploy funds here to prevent sandwich attacks.
-     * Funds will be deployed by the permissioned _tend() or
-     * _harvestAndReport() functions.
-     */
-    function _deployFunds(uint256 /*_amount*/) internal override {
-        // Do nothing. Let funds accumulate as idle to be deployed by _tend.
+    function _deployFunds(uint256 amount) internal override {
+        vault.deposit(amount, address(this));
     }
 
     /**
@@ -133,7 +119,15 @@ contract YieldDonatingStrategy is BaseStrategy {
     /**
      * @notice Gets the max amount of `asset` that can be withdrawn.
      */
-    function availableWithdrawLimit(address /*_owner*/) public view virtual override returns (uint256) {
+    function availableWithdrawLimit(
+        address /*_owner*/
+    )
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         // Calculate total assets = idle + value held in vault
         uint256 idleBalance = IERC20(asset).balanceOf(address(this));
 
@@ -147,26 +141,16 @@ contract YieldDonatingStrategy is BaseStrategy {
      * @notice Gets the max amount of `asset` that can be deposited.
      * @dev Queries the Spark vault's maxDeposit limit.
      */
-    function availableDepositLimit(address /*_owner*/) public view virtual override returns (uint256) {
+    function availableDepositLimit(
+        address /*_owner*/
+    )
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return vault.maxDeposit(address(this));
-    }
-
-    /**
-     * @dev Called by a permissioned keeper to deploy idle funds
-     * between reports. This minimizes cash drag and avoids MEV.
-     * @param _totalIdle The current amount of idle funds (passed by BaseStrategy).
-     */
-    function _tend(uint256 _totalIdle) internal virtual override {
-        vault.deposit(_totalIdle, address(this));
-    }
-
-    /**
-     * @dev Trigger for the keeper. Returns true if the amount of
-     * idle cash is above our threshold.
-     */
-    function _tendTrigger() internal view virtual override returns (bool) {
-        uint256 idleAssets = IERC20(asset).balanceOf(address(this));
-        return idleAssets >= minIdleToTend;
     }
 
     /**
@@ -175,17 +159,5 @@ contract YieldDonatingStrategy is BaseStrategy {
     function _emergencyWithdraw(uint256 _amount) internal virtual override {
         // Calls our robust _freeFunds function
         _freeFunds(_amount);
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                    MANAGEMENT FUNCTIONS
-    //////////////////////////////////////////////////////////////*/
-
-    /**
-     * @notice Management function to update the tend threshold.
-     * @param _newMin The new minimum idle asset amount to trigger a tend.
-     */
-    function setMinIdleToTend(uint256 _newMin) external onlyManagement {
-        minIdleToTend = _newMin;
     }
 }
