@@ -119,15 +119,7 @@ contract YieldDonatingStrategy is BaseStrategy {
     /**
      * @notice Gets the max amount of `asset` that can be withdrawn.
      */
-    function availableWithdrawLimit(
-        address /*_owner*/
-    )
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function availableWithdrawLimit(address owner) public view virtual override returns (uint256) {
         // Calculate total assets = idle + value held in vault
         uint256 idleBalance = IERC20(asset).balanceOf(address(this));
 
@@ -141,15 +133,7 @@ contract YieldDonatingStrategy is BaseStrategy {
      * @notice Gets the max amount of `asset` that can be deposited.
      * @dev Queries the Spark vault's maxDeposit limit.
      */
-    function availableDepositLimit(
-        address /*_owner*/
-    )
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function availableDepositLimit(address owner) public view virtual override returns (uint256) {
         return vault.maxDeposit(address(this));
     }
 
