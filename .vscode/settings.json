@@ -1,9 +1,18 @@
 {
-  "solidity.compileUsingRemoteVersion": "v0.8.23",
+  "solidity.compileUsingRemoteVersion": "latest",
+  "solidity.packageDefaultDependenciesContractsDirectory": "src",
+  "solidity.packageDefaultDependenciesDirectory": [
+    "lib",
+    "dependencies"
+  ],
   "solidity.remappings": [
-    "@openzeppelin/=./lib/openzeppelin-contracts/",
-    "forge-std/=lib/forge-std/src/",
-    "@tokenized-strategy/=./lib/tokenized-strategy/src/",
-    "@periphery/=./lib/tokenized-strategy-periphery/src/"
+    "@octant-core=dependencies/octant-v2-core/src",
+    "@openzeppelin-contracts-5.3.0/=dependencies/@openzeppelin-contracts-5.3.0/",
+    "@openzeppelin/contracts/=dependencies/@openzeppelin-contracts-5.3.0/contracts/",
+    "@tokenized-strategy-periphery/=dependencies/tokenized-strategy-periphery-3.0.2/",
+    "@tokenized-strategy/=dependencies/tokenized-strategy-3.0.4/src",
+    "forge-std-1.11.0/=dependencies/forge-std-1.11.0/",
+    "tokenized-strategy-3.0.4/=dependencies/tokenized-strategy-3.0.4/",
+    "tokenized-strategy-periphery-3.0.2/=dependencies/tokenized-strategy-periphery-3.0.2/"
   ]
 }

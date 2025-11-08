@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0
 pragma solidity ^0.8.25;
 
-import "forge-std/console2.sol";
 import {Test} from "forge-std/Test.sol";
 
-import {YieldDonatingStrategy as Strategy, ERC20} from "../../strategies/yieldDonating/YieldDonatingStrategy.sol";
-import {YieldDonatingStrategyFactory as StrategyFactory} from "../../strategies/yieldDonating/YieldDonatingStrategyFactory.sol";
+import {
+    YieldDonatingAaveV3Strategy as Strategy,
+    ERC20
+} from "../../strategies/yieldDonating/YieldDonatingAaveV3Strategy.sol";
+import {
+    YieldDonatingAaveV3StrategyFactory as StrategyFactory
+} from "../../strategies/yieldDonating/YieldDonatingAaveV3StrategyFactory.sol";
 import {IStrategyInterface} from "../../interfaces/IStrategyInterface.sol";
 import {ITokenizedStrategy} from "@octant-core/core/interfaces/ITokenizedStrategy.sol";
 
@@ -21,7 +25,7 @@ contract YieldDonatingSetup is Test, IEvents {
     StrategyFactory public strategyFactory;
 
     // Addresses for different roles we will use repeatedly.
-    address public user = address(10);
+    address public user = address(42);
     address public keeper = address(4);
     address public management = address(1);
     address public dragonRouter = address(3); // This is the donation address
@@ -30,7 +34,8 @@ contract YieldDonatingSetup is Test, IEvents {
     // YieldDonating specific variables
     bool public enableBurning = true;
     address public tokenizedStrategyAddress;
-    address public yieldSource;
+    address public lendingPool;
+    address public aToken;
 
     // Integer variables that will be used repeatedly.
     uint256 public decimals;
@@ -58,8 +63,10 @@ contract YieldDonatingSetup is Test, IEvents {
         maxFuzzAmount = 1_000_000 * 10 ** decimals;
 
         // Read yield source from environment
-        yieldSource = vm.envAddress("TEST_YIELD_SOURCE");
-        require(yieldSource != address(0), "TEST_YIELD_SOURCE not set in .env");
+        lendingPool = vm.envAddress("TEST_AAVE_POOL");
+        require(lendingPool != address(0), "TEST_AAVE_POOL not set in .env");
+        aToken = vm.envAddress("TEST_AAVE_ATOKEN");
+        require(aToken != address(0), "TEST_AAVE_ATOKEN not set in .env");
 
         // Deploy YieldDonatingTokenizedStrategy implementation
         tokenizedStrategyAddress = address(new YieldDonatingTokenizedStrategy());
@@ -73,6 +80,8 @@ contract YieldDonatingSetup is Test, IEvents {
 
         // label all the used addresses for traces
         vm.label(keeper, "keeper");
+        vm.label(lendingPool, "lendingPool");
+        vm.label(aToken, "aToken");
         // vm.label(factory, "factory"); // Factory not used in this setup
         vm.label(address(asset), "asset");
         vm.label(management, "management");
@@ -85,7 +94,7 @@ contract YieldDonatingSetup is Test, IEvents {
         IStrategyInterface _strategy = IStrategyInterface(
             address(
                 new Strategy(
-                    yieldSource,
+                    lendingPool,
                     address(asset),
                     "YieldDonating Strategy",
                     management,
@@ -153,7 +162,7 @@ contract YieldDonatingSetup is Test, IEvents {
     function setEnableBurning(bool _enableBurning) public {
         vm.prank(management);
         // Call using low-level call since setEnableBurning may not be in all interfaces
-        (bool success, ) = address(strategy).call(abi.encodeWithSignature("setEnableBurning(bool)", _enableBurning));
+        (bool success,) = address(strategy).call(abi.encodeWithSignature("setEnableBurning(bool)", _enableBurning));
         require(success, "setEnableBurning failed");
     }
 }
