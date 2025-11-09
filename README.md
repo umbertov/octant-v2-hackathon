@@ -48,7 +48,7 @@ __________________________________
 
 ## 📄 License
 
-This project (including the umpcoming additional features described above in "Next Steps" and "Future plans" sections) is licensed under the MIT License - see the [LICENSE]([url](https://choosealicense.com/licenses/mit/) file for details.
+This project (including the umpcoming additional features described above in "Next Steps" and "Future plans" sections) is licensed under the MIT License - see the [LICENSE](https://choosealicense.com/licenses/mit/) file for details.
 
 __________________________________
 
