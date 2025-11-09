@@ -34,7 +34,7 @@ __________________________________
 2. Add working stream feature: https://docs.superfluid.org/docs/category/money-streaming 
 3. Add working stream&split feature: https://docs.superfluid.org/docs/category/distribution-pools
 4. Build Frontend and seamless UX ( in partnerhsip with Rumor.fi )
-5. Integrate Farcaster social voting for multistrategy deposits and for split / stream&split features
+5. Integrate Farcaster social voting about strategies and donations' recipients
 6. Integrate Uniswap v4 Hooks: route yield to pools, capture swap fees and donate them to Public Goods
 
 
