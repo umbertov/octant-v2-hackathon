@@ -44,6 +44,13 @@ __________________________________
 3. Multichain Vaults: deploy contracts on Polygon, Base, Arbitrum
 4. Private Donations: test vaults on Miden blockchain (testnet) 
 
+__________________________________
+
+## 📄 License
+
+This project (including the umpcoming additional features described above in "Next Steps" and "Future plans" sections) is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+__________________________________
 
 # Test
 
