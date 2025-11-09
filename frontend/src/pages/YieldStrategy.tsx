@@ -7,7 +7,7 @@ import abi from '../abis/YieldDonatingTokenizedStrategy.json';
 import { config } from '@/lib/config';
 import React from 'react';
 
-const contractAddress = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
+const contractAddress = '0x6a5c3b4e09f9135f8e336c6d7cc77076d6e9a936';
 const USDC_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
 
 const YieldStrategy: React.FC = () => {
