@@ -26,7 +26,6 @@ __________________________________
 - Split (Octant Paymnet Splitter): https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol 
 - Stream (Superfluid CFAv1): https://github.com/umbertov/octant-v2-hackathon/tree/superfluid
 - Frontend: https://github.com/golemfoundation/octant-v2-hackathon-dapp-boilerplate
-__________________________________
 
 ## Next Steps
 
@@ -35,16 +34,12 @@ __________________________________
 3. Add working stream&split feature: https://docs.superfluid.org/docs/category/distribution-pools
 4. Build Frontend and seamless UX ( in partnerhsip with Rumor.fi )
 
-__________________________________
-
 ## Future plans
 
 1. Integrate Farcaster social voting about strategies and donations' recipients
 2. Integrate Uniswap v4 Hooks: route yield to pools, capture swap fees and donate them to Public Goods
 3. Multichain Vaults: deploy contracts on Polygon, Base, Arbitrum
 4. Private Donations: test vaults on Miden blockchain (testnet) 
-
-__________________________________
 
 ## 📄 License
 
