@@ -21,11 +21,10 @@
 
 __________________________________
 
-**Split & Stream - Failed tests**
+**Failed tests**
 
-- Split: https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol 
-- Stream: https://docs.superfluid.org/docs/category/money-streaming
-
+- Split (Octant Paymnet Splitter): https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol 
+- Stream (Superfluid CFAv1): https://github.com/umbertov/octant-v2-hackathon/tree/superfluid
 __________________________________
 
 **Next Steps**
