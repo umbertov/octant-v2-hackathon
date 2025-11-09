@@ -29,10 +29,20 @@ export const devnet = defineChain({
 })
 
 
+export const localnet = defineChain({
+    id: 31337,
+    name: 'Local Anvil Network',
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: {
+        default: { http: ['http://localhost:8545'] },
+    },
+})
+
+
 
 export const config = getDefaultConfig({
     appName: 'My RainbowKit App',
     projectId: 'YOUR_PROJECT_ID',
-    chains: [mainnet, devnet],
+    chains: [mainnet, devnet, localnet],
     ssr: false, // If your dApp uses server side rendering (SSR)
 });
