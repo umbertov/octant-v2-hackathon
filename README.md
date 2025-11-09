@@ -34,8 +34,15 @@ __________________________________
 2. Add working stream feature: https://docs.superfluid.org/docs/category/money-streaming 
 3. Add working stream&split feature: https://docs.superfluid.org/docs/category/distribution-pools
 4. Build Frontend and seamless UX ( in partnerhsip with Rumor.fi )
-5. Integrate Farcaster social voting about strategies and donations' recipients
-6. Integrate Uniswap v4 Hooks: route yield to pools, capture swap fees and donate them to Public Goods
+
+__________________________________
+
+**Future plans**
+
+1. Integrate Farcaster social voting about strategies and donations' recipients
+2. Integrate Uniswap v4 Hooks: route yield to pools, capture swap fees and donate them to Public Goods
+3. Multichain Vaults: deploy contracts on Polygon, Base, Arbitrum
+4. Private Donations: test vaults on Miden blockchain (testnet) 
 
 
 # Test
