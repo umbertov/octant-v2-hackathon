@@ -46,6 +46,7 @@ const YieldStrategy: React.FC = () => {
     });
 
     const [depositAmount, setDepositAmount] = React.useState('');
+    const [withdrawAmount, setWithdrawAmount] = React.useState('');
 
     useEffect(() => {
         if (fetchedShares) setShares(Number(fetchedShares));
@@ -56,6 +57,13 @@ const YieldStrategy: React.FC = () => {
         const value = e.target.value;
         if (/^\d*(\.\d{0,6})?$/.test(value)) {
             setDepositAmount(value);
+        }
+    };
+
+    const handleWithdrawChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        if (/^\d*(\.\d{0,6})?$/.test(value)) {
+            setWithdrawAmount(value);
         }
     };
 
@@ -75,6 +83,18 @@ const YieldStrategy: React.FC = () => {
                     type="text"
                     value={depositAmount}
                     onChange={handleDepositChange}
+                    placeholder="Enter amount in USDC"
+                    className="mt-1 block w-full"
+                />
+            </div>
+
+            <div className="mb-4">
+                <label htmlFor="withdraw" className="block text-sm font-medium text-gray-700">Withdraw Amount (USDC)</label>
+                <Input
+                    id="withdraw"
+                    type="text"
+                    value={withdrawAmount}
+                    onChange={handleWithdrawChange}
                     placeholder="Enter amount in USDC"
                     className="mt-1 block w-full"
                 />
