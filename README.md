@@ -21,10 +21,11 @@
 
 __________________________________
 
-**Failed tests**
+**Failed integrations**
 
 - Split (Octant Paymnet Splitter): https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol 
 - Stream (Superfluid CFAv1): https://github.com/umbertov/octant-v2-hackathon/tree/superfluid
+- Frontend: https://github.com/golemfoundation/octant-v2-hackathon-dapp-boilerplate
 __________________________________
 
 **Next Steps**
