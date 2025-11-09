@@ -1,3 +1,25 @@
+# Test
+
+```
+cp .env.example .env
+make trace
+```
+
+# Deploy
+
+```sh
+forge script --optimize \
+    scripts/Deploy.sol:StrategyDeploymentScript \
+    --rpc-url "$ETH_RPC_URL" \
+    --broadcast
+
+forge script --optimize \
+    scripts/DeployAave.sol:StrategyAaveDeploymentScript \
+    --rpc-url "$ETH_RPC_URL" \
+    --broadcast
+```
+
+
 # YieldDonating Strategy Development Guide for Octant
 
 This repository provides a template for creating **YieldDonating strategies** compatible with Octant's ecosystem using [Foundry](https://book.getfoundry.sh/). YieldDonating strategies donate all generated yield to a donation address.
