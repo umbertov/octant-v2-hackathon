@@ -2,20 +2,20 @@
 
 **Strategy 1: Aave v3 vault**
 - User deposits funds (USDC, Mainnet) into Aave pool, it gets AAVE aTokens (balance increase over time)
-- Yield generated (USDC, Mainnet) is entirely donated via Octant YDS to the public good address
+- Yield generated (USDC, Mainnet) is entirely donated to a single public good (recipient)
 - Lending, APY 5,08%
 - Vault contract: 0x2cb0bb2754b34197aaf4a096722992806a4a3278
 
 **Strategy 2: Spark saving v2 vault**
 - User deposits funds (spUSDC, Mainnet) into Spark saving v2 vault, so it generates yield over time
 - spUSDC increases in value over time, as its USDC denominated value gradually increases
-- Yield generated (USDC, Mainnet) is entirely donated via Octant YDS to the public good address
+- Yield generated (USDC, Mainnet) is entirely donated to a single public good (recipient)
 - Different Strategies, APY 4,50%
 - Vault contract: 0x2d33137306c49053600c604ca4e1b2f4e3d19774
 
 **Strategy 3: Kalani USDC-1 yVault**
 - User deposits funds (USDC, Mainnet) into Kalani multistrategy vault (USDC-1 yVault), so it generates yield over time
-- Yield generated (USDC, Mainnet) is entirely donated via Octant YDS to the public good address
+- Yield generated (USDC, Mainnet) is entirely donated to a single public good (recipient)
 - Different Strategies, projected APY 11,24%
 - Vault contract: 0xD55D55d6e303b7306f30D55CE56b3D357eb34f0D
 
