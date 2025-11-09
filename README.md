@@ -1,3 +1,43 @@
+# SSSR - Safe, Split, Stream, Repeat
+
+**Strategy 1: Aave v3 vault**
+- User deposits funds (USDC, Mainnet) into Aave pool, it gets AAVE aTokens (balance increase over time)
+- Yield generated (USDC, Mainnet) is entirely donated via Octant YDS to the public good address
+- Lending, APY 5,08%
+- Vault contract: 0x2cb0bb2754b34197aaf4a096722992806a4a3278
+
+**Strategy 2: Spark saving v2 vault**
+- User deposits funds (spUSDC, Mainnet) into Spark saving v2 vault, so it generates yield over time
+- spUSDC increases in value over time, as its USDC denominated value gradually increases
+- Yield generated (USDC, Mainnet) is entirely donated via Octant YDS to the public good address
+- Different Strategies, APY 4,50%
+- Vault contract: 0x2d33137306c49053600c604ca4e1b2f4e3d19774
+
+**Strategy 3: Kalani USDC-1 yVault**
+- User deposits funds (USDC, Mainnet) into Kalani multistrategy vault (USDC-1 yVault), so it generates yield over time
+- Yield generated (USDC, Mainnet) is entirely donated via Octant YDS to the public good address
+- Different Strategies, projected APY 11,24%
+- Vault contract: 0xD55D55d6e303b7306f30D55CE56b3D357eb34f0D
+
+__________________________________
+
+**Split & Stream - Failed tests**
+
+- Split: https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol 
+- Stream: https://docs.superfluid.org/docs/category/money-streaming
+
+__________________________________
+
+**Next Steps**
+
+1. Add working split feature: https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol  
+2. Add working stream feature: https://docs.superfluid.org/docs/category/money-streaming 
+3. Add working stream&split feature: https://docs.superfluid.org/docs/category/distribution-pools
+4. Build Frontend and seamless UX ( in partnerhsip with Rumor.fi )
+5. Integrate Farcaster social voting for multistrategy deposits and for split / stream&split features
+6. Integrate Uniswap v4 Hooks: route yield to pools, capture swap fees and donate them to Public Goods
+
+
 # Test
 
 ```
