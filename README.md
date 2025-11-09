@@ -21,14 +21,14 @@
 
 __________________________________
 
-**Failed integrations**
+## Failed integrations
 
 - Split (Octant Paymnet Splitter): https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol 
 - Stream (Superfluid CFAv1): https://github.com/umbertov/octant-v2-hackathon/tree/superfluid
 - Frontend: https://github.com/golemfoundation/octant-v2-hackathon-dapp-boilerplate
 __________________________________
 
-**Next Steps**
+## Next Steps
 
 1. Add working split feature: https://github.com/golemfoundation/octant-v2-core/blob/develop/src/core/PaymentSplitter.sol  
 2. Add working stream feature: https://docs.superfluid.org/docs/category/money-streaming 
@@ -37,7 +37,7 @@ __________________________________
 
 __________________________________
 
-**Future plans**
+## Future plans
 
 1. Integrate Farcaster social voting about strategies and donations' recipients
 2. Integrate Uniswap v4 Hooks: route yield to pools, capture swap fees and donate them to Public Goods
@@ -48,7 +48,7 @@ __________________________________
 
 ## 📄 License
 
-This project (including the umpcoming additional features described above in "Next Steps" and "Future plans" sections) is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project (including the umpcoming additional features described above in "Next Steps" and "Future plans" sections) is licensed under the MIT License - see the [LICENSE]([url](https://choosealicense.com/licenses/mit/) file for details.
 
 __________________________________
 
