@@ -24,8 +24,14 @@ contract StrategyDeploymentScript is Script {
             vm.envAddress("EMERGENCY_ADMIN_ADDRESS"),
             vm.envBool("ENABLE_BURNING"),
             vm.envAddress("TEST_ASSET_ADDRESS"),
-            vm.envAddress("TEST_YIELD_SOURCE"),
+            vm.envAddress("TEST_YIELD_SOURCE")
         );
+        vm.label(management, "management");
+        vm.label(donationAddress, "donationAddress");
+        vm.label(keeper, "keeper");
+        vm.label(emergencyAdmin, "emergencyAdmin");
+        vm.label(asset, "asset");
+        vm.label(yieldSource, "yieldSource");
 
         vm.startBroadcast();
 
